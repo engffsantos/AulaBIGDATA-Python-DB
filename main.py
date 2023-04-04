@@ -2,15 +2,16 @@ import mysql.connector
 from mysql.connector import errorcode
 
 # Conexão com o banco de dados
-def conecta(query, values):
+def conecta(query, values=0):
     try:
-        cnx = mysql.connector.connect(user='root', password='1234', host='127.0.0.1', database='empresa')
+        cnx = mysql.connector.connect(user='root', password='', host='127.0.0.1', database='empresa')
         cursor = cnx.cursor()
-        cursor.execute(query, values)
-        cnx.commit()
-        cursor.close()
-        cnx.close()
-        return cursor
+        if values==0:
+            cursor.execute(query)
+        else:
+            cursor.execute(query, values)
+        fech = cursor.fetchall()
+        return fech
     except mysql.connector.Error as erro:
         if erro.errno == errorcode.ER_ACCESS_DENIED_ERROR:
             print("Usuário ou senha inválidos")
@@ -18,7 +19,8 @@ def conecta(query, values):
             print("Banco de dados não existe")
         else:
             print(erro)
-    else:
+    finally:
+        cursor.close()
         cnx.close()
 # Função para inserir um novo funcionário
 def inserir_funcionario():
@@ -84,9 +86,8 @@ def apagar_funcionario():
     query = "SELECT * FROM funcionarios WHERE Codigo = %s"
     values = (codigo,)
     cursor = conecta(query, values)
-    result = cursor.fetchone()
 
-    if result is None:
+    if cursor is None:
         print("Funcionário não encontrado!")
         return
 
@@ -103,33 +104,27 @@ def apagar_funcionario():
         print("Funcionário apagado com sucesso!")
 def lista_funcionario():
     query = "SELECT CONCAT(PrimeiroNome, ' ', UltimoNome) AS nome_completo, Salario FROM funcionarios"
-    cursor = conecta(query, '')
-    resultado = cursor.fetchall()
-    for i in resultado:
+    cursor = conecta(query)
+    for i in cursor:
         print(i[0], "-", i[1])
 def lista_expecifica():
     query = """SELECT *, DATEDIFF(CURDATE(), DataNasci)/365.25 AS idade
     FROM funcionarios
     WHERE DATEDIFF(CURDATE(), DataNasci)/365.25 < 30
     AND Salario > 1000 """
-    cursor = conecta(query, '')
-    resultado = cursor.fetchall()
-    for i in resultado:
+    cursor = conecta(query)
+    for i in cursor:
         print(i[0], "-", i[1])
 
 while True:
-    print("\n*** MENU PRINCIPAL ***")
-    print("1. Inserir funcionário")
-    print("2. Atualizar funcionário")
-    print("3. Apagar funcionário")
-    print("4. Sair")
-    opcao = input("Digite a opção desejada:\n"
-                  "1 - Inserir\n"
-                  "2 - Atualizar\n"
-                  "3 - Apagar Funcionario\n"
-                  "4 - Listar Funcionario\n"
-                  "5 - Listar Funcionarios com idade menor 30 anos e com salario maior do que R$1000,00 \n"
-                  "6 - Sair")
+    print("\n*** MENU PRINCIPAL ***\n",'=='*15)
+    print("1 - Inserir\n"
+          "2 - Atualizar\n"
+          "3 - Apagar Funcionario\n"
+          "4 - Listar Funcionario\n"
+          "5 - Listar Funcionarios com idade menor 30 anos e com salario maior do que R$1000,00 \n"
+          "6 - Sair")
+    opcao = input("Digite a opção desejada: ")
     if opcao == "1":
         inserir_funcionario()
     elif opcao == "2":
